@@ -33,8 +33,8 @@ export function Input({
       </label>
       <div
         className={cn(
-          "flex h-12 items-center gap-1 rounded-2xl border bg-surface px-4 transition-colors focus-within:ring-2 focus-within:ring-accent",
-          invalid ? "border-danger" : "border-border focus-within:border-accent",
+          "flex h-12 items-center gap-1 rounded-2xl border bg-surface px-4 transition-[border-color,background-color] focus-within:ring-2 focus-within:ring-accent",
+          invalid ? "border-danger" : "border-border-strong focus-within:border-accent",
         )}
       >
         {prefix != null && (

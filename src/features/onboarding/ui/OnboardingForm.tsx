@@ -8,7 +8,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { messageFor } from "@/features/auth/api";
+import { messageFor, rpcErrorMessage } from "@/features/auth/api";
 import { useMe } from "@/features/auth/hooks";
 import { useCompleteOnboarding, useUsernameAvailability } from "@/features/onboarding/hooks";
 import { displayNameSchema } from "@/lib/validation";
@@ -22,9 +22,10 @@ const extraErrors: Record<string, string> = {
   invalid_display_name: "Use 1–50 characters for your name.",
 };
 
-function errorText(error: { message?: string }) {
+/** Inline message for known error codes; null for anything else (network failures and so on). */
+function inlineErrorText(error: { message?: string }) {
   const code = error.message?.trim() ?? "";
-  return extraErrors[code] ?? messageFor(error);
+  return extraErrors[code] ?? (rpcErrorMessage[code] ? messageFor(error) : null);
 }
 
 export function OnboardingForm() {
@@ -32,6 +33,8 @@ export function OnboardingForm() {
   const me = useMe();
   const complete = useCompleteOnboarding();
   const { controls: formShake, shake: shakeForm } = useShake();
+  const usernameRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
   const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [username, setUsername] = useState("");
@@ -90,7 +93,11 @@ export function OnboardingForm() {
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!canSubmit) {
+      if (submitting || done) return;
       setAttempted(true);
+      (status !== "available" ? usernameRef : nameRef).current?.focus();
+      haptic("error");
+      void shakeForm();
       return;
     }
     setServerError(null);
@@ -105,11 +112,11 @@ export function OnboardingForm() {
           }, duration.medium * 1000);
         },
         onError: (error) => {
-          const message = errorText(error);
-          setServerError(message);
+          const inline = inlineErrorText(error);
+          if (inline) setServerError(inline);
+          else toast.error(messageFor(error));
           haptic("error");
           void shakeForm();
-          toast.error(message);
         },
       },
     );
@@ -146,6 +153,7 @@ export function OnboardingForm() {
               <StaggerItem key="username" className="mt-8">
                 <Input
                   id="username"
+                  ref={usernameRef}
                   label="Username"
                   prefix="@"
                   value={username}
@@ -183,13 +191,14 @@ export function OnboardingForm() {
               <StaggerItem key="name" className="mt-4">
                 <Input
                   id="display-name"
+                  ref={nameRef}
                   label="Display name"
                   value={displayName}
                   onChange={(e) => setNameEdit(e.target.value)}
                   maxLength={50}
                   autoComplete="name"
                   placeholder="Your name"
-                  invalid={nameTouched && !nameValid}
+                  invalid={(nameTouched || attempted) && !nameValid}
                   aria-describedby="display-name-help"
                 />
                 <p
@@ -197,7 +206,7 @@ export function OnboardingForm() {
                   aria-live="polite"
                   className="min-h-5 pt-1.5 text-sm text-danger"
                 >
-                  {nameTouched && !nameParsed.success ? nameParsed.error.issues[0]?.message : ""}
+                  {(nameTouched || attempted) && !nameParsed.success ? nameParsed.error.issues[0]?.message : ""}
                 </p>
               </StaggerItem>
 
@@ -205,13 +214,17 @@ export function OnboardingForm() {
                 <Button
                   type="submit"
                   size="lg"
-                  className="w-full"
-                  disabled={!canSubmit && !submitting && !done}
+                  aria-disabled={!canSubmit && !submitting && !done ? true : undefined}
+                  aria-describedby={!canSubmit && !submitting && !done ? "submit-reason" : undefined}
+                  className={"w-full" + (!canSubmit && !submitting && !done ? " opacity-50" : "")}
                   state={submitting ? "loading" : done ? "success" : "idle"}
                   announce={{ loading: "Saving", success: "Saved" }}
                 >
                   Continue
                 </Button>
+                <span id="submit-reason" className="sr-only">
+                  Choose an available username and enter your display name to continue.
+                </span>
               </StaggerItem>
             </StaggerList>
           </form>

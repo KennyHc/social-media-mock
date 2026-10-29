@@ -7,7 +7,6 @@ import { StaggerItem, StaggerList, useShake } from "@/components/motion";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Logo } from "@/components/ui/Logo";
 import { signInWithGoogle, messageFor } from "@/features/auth/api";
-import { haptic } from "@/motion/haptics";
 import { GoogleButton } from "./GoogleButton";
 
 const AUTH_FAILED = "We couldn't sign you in. Please try again.";
@@ -19,16 +18,13 @@ function LoginError({ signInError }: { signInError: string | null }) {
   const { controls, shake } = useShake();
   useEffect(() => {
     if (message) {
-      haptic("error");
       void shake();
     }
   }, [message, shake]);
   return (
-    <motion.div animate={controls} className="min-h-10 pt-3">
-      <p role="alert" className="text-center text-sm text-danger">
-        {message}
-      </p>
-    </motion.div>
+    <motion.span animate={controls} className="block">
+      {message}
+    </motion.span>
   );
 }
 
@@ -63,9 +59,11 @@ export function LoginScreen() {
           </StaggerItem>
           <StaggerItem key="button" className="mt-10 w-full">
             <GoogleButton onClickAsync={onGoogle} />
-            <Suspense fallback={<div className="min-h-10 pt-3" />}>
-              <LoginError signInError={signInError} />
-            </Suspense>
+            <div role="alert" className="min-h-10 pt-3 text-center text-sm text-danger">
+              <Suspense fallback={null}>
+                <LoginError signInError={signInError} />
+              </Suspense>
+            </div>
           </StaggerItem>
           <StaggerItem key="footnote" className="mt-6">
             <p className="text-xs text-fg-muted">Invite-only by friendship. No public profiles.</p>
