@@ -118,11 +118,7 @@ export function SearchCard({ inputRef }: { inputRef?: Ref<HTMLInputElement> }) {
   let body;
   if (!submitted) {
     key = "idle";
-    body = (
-      <p className="px-4 text-sm text-fg-muted">
-        Look someone up to send a request.
-      </p>
-    );
+    body = <p className="px-4 text-sm text-fg-muted">Look someone up to send a request.</p>;
   } else if (search.isPending || (search.isFetching && !search.data && !search.isError)) {
     key = "loading";
     body = <RowSkeleton />;

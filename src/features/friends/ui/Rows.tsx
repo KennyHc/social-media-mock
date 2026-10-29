@@ -1,10 +1,11 @@
 "use client";
 
+import { AnimatePresence, motion } from "motion/react";
 import type { ReactNode } from "react";
+import { duration, enter, exit, exitT } from "@/motion/tokens";
 import { Skeleton } from "@/components/motion";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
-import { cn } from "@/lib/cn";
 import type { UserSummary } from "@/features/friends/hooks";
 
 /** One fixed row height shared by real rows, skeletons and the search result. */
@@ -47,7 +48,7 @@ export function UserRowContent({ user, children }: { user: UserSummary; children
         <p className="truncate text-sm font-medium leading-5 text-fg">{name}</p>
         <p className="truncate text-xs leading-4 text-fg-muted">@{user.username}</p>
       </div>
-      <div className={cn("flex shrink-0 items-center gap-2")}>{children}</div>
+      <div className="flex shrink-0 items-center gap-2">{children}</div>
     </>
   );
 }
@@ -63,5 +64,23 @@ export function InlineError({ onRetry, what }: { onRetry: () => void; what: stri
         Retry
       </Button>
     </div>
+  );
+}
+
+/** Cross-fades `children` in once the previous content has exited; reserves nothing itself. */
+export function FadeSwap({ show, children }: { show: boolean; children: ReactNode }) {
+  return (
+    <AnimatePresence mode="popLayout" initial={false}>
+      {show && (
+        <motion.div
+          key="swap"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, transition: { ...enter, delay: exit(duration.short) } }}
+          exit={{ opacity: 0, transition: exitT }}
+        >
+          {children}
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
