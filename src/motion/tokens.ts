@@ -58,6 +58,10 @@ export const distance = {
   roll: "60%",
   /** Splash overlay lift on exit. */
   splashLift: 8,
+  /** Leftward travel of a dismissed (declined, cancelled, removed) row. */
+  dismissX: 16,
+  /** BreathingCircles counter-offset, px. */
+  breatheX: 2,
 } as const;
 
 /** Scale applied while a pressable is held down. */
@@ -71,6 +75,8 @@ export const scale = {
   itemExit: 0.98,
   /** Checkmark / logo pop-in start. */
   popFrom: 0.8,
+  /** BreathingCircles peak scale. */
+  breathe: 1.04,
 } as const;
 
 /** Misc timings. `*Ms` values are milliseconds for timers, the rest are seconds. */
@@ -83,6 +89,20 @@ export const timing = {
   ringSettleMs: 350,
   /** Splash holds this long (ring stroke) before lifting out. */
   splashHoldMs: 450,
+  /** How long the accept check shows before the row resolves. */
+  acceptHoldMs: 400,
+  /** BreathingCircles half-cycle in seconds (mirrored repeat). */
+  breathe: 3,
+  /** A rollback shake flag expires if its row never re-enters. */
+  shakeFlagMs: 5000,
+} as const;
+
+/** Opacity constants. */
+export const opacity = {
+  /** BreathingCircles resting opacity (matches the Logo motif). */
+  breatheLow: 0.85,
+  /** Reduced-motion shake dip. */
+  dip: 0.5,
 } as const;
 
 /** Gesture thresholds shared by Sheet and Toast. */

@@ -13,3 +13,7 @@ export * from "./Toaster";
 export { toast, type ToastOptions, type ToastKind } from "./toast";
 export * from "./Splash";
 export { useFocusTrap, useScrollLock, useIsClient, useMediaQuery } from "./a11y";
+export * from "./Badge";
+export * from "./AnimatedRow";
+export * from "./BreathingCircles";
+export * from "./useRollbackShake";

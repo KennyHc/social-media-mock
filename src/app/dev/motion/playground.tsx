@@ -1,9 +1,15 @@
 "use client";
 
 import { AnimatePresence } from "motion/react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
+  AnimatedList,
   AnimatedNumber,
+  AnimatedRow,
+  Badge,
+  BreathingCircles,
+  RollbackShakeProvider,
+  useRollbackShake,
   CheckmarkDraw,
   FadeIn,
   Modal,
@@ -19,6 +25,7 @@ import {
 } from "@/components/motion";
 import { Button } from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { timing } from "@/motion/tokens";
 import { ParticleBurst, celebrate, preloadCelebrate } from "@/features/celebrate";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -32,6 +39,85 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const small = "secondary" as const;
+
+type Req = { id: string; name: string };
+const REQUESTS: Req[] = ["Mia", "Noah", "Ava", "Leo"].map((name) => ({ id: name.toLowerCase(), name }));
+
+function FriendsDemo() {
+  const [rows, setRows] = useState(REQUESTS);
+  const [badge, setBadge] = useState(3);
+  const [accepted, setAccepted] = useState<string[]>([]);
+  const reasons = useRef(new Map<string, "collapse" | "dismiss">());
+  const { shake, shakeProps } = useRollbackShake();
+  const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
+  const later = (fn: () => void, ms: number) => {
+    const t = setTimeout(() => {
+      timers.current.delete(t);
+      fn();
+    }, ms);
+    timers.current.add(t);
+  };
+  useEffect(() => {
+    const set = timers.current;
+    return () => set.forEach(clearTimeout);
+  }, []);
+
+  const remove = (id: string, why: "collapse" | "dismiss") => {
+    reasons.current.set(id, why);
+    setRows((r) => r.filter((x) => x.id !== id));
+  };
+  const accept = (req: Req, el: HTMLElement) => {
+    if (accepted.includes(req.id)) return;
+    setAccepted((a) => [...a, req.id]);
+    void celebrate({ tier: "small", origin: el });
+    later(() => {
+      remove(req.id, "collapse");
+      setAccepted((a) => a.filter((i) => i !== req.id));
+    }, timing.acceptHoldMs);
+  };
+  const rollback = () => {
+    const req = rows[0];
+    if (!req) return;
+    remove(req.id, "dismiss");
+    later(() => {
+      setRows((r) => (r.some((x) => x.id === req.id) ? r : [req, ...r]));
+      shake(req.id);
+    }, 600);
+  };
+
+  return (
+    <Section title="Friends">
+      <RollbackShakeProvider {...shakeProps}>
+        <AnimatedList className="w-full space-y-2" exitFor={(id) => reasons.current.get(id) ?? "dismiss"}>
+          {rows.map((req, i) => (
+            <AnimatedRow
+              key={req.id}
+              id={req.id}
+              index={i}
+              className="flex items-center justify-between rounded-xl bg-surface-2 p-3"
+            >
+              <span>{req.name}</span>
+              <span className="flex gap-2">
+                <Button size="sm" disabled={accepted.includes(req.id)} onPointerEnter={preloadCelebrate} onClick={(e) => accept(req, e.currentTarget)}>
+                  {accepted.includes(req.id) ? "Accepted" : "Accept"}
+                </Button>
+                <Button size="sm" variant={small} onClick={() => remove(req.id, "dismiss")}>Decline</Button>
+              </span>
+            </AnimatedRow>
+          ))}
+        </AnimatedList>
+      </RollbackShakeProvider>
+      <Button size="sm" variant={small} onClick={rollback}>Rollback</Button>
+      <Button size="sm" variant={small} onClick={() => setRows(REQUESTS)}>Reset</Button>
+      <span className="flex items-center gap-2">
+        <Button size="sm" variant={small} aria-label="Decrease badge" onClick={() => setBadge((n) => Math.max(0, n - 1))}>-</Button>
+        <Button size="sm" variant={small} aria-label="Increase badge" onClick={() => setBadge((n) => n + 1)}>+</Button>
+        <Badge count={badge} />
+      </span>
+      <BreathingCircles />
+    </Section>
+  );
+}
 
 export function MotionPlayground() {
   const [sheet, setSheet] = useState(false);
@@ -165,6 +251,8 @@ export function MotionPlayground() {
           <ParticleBurst trigger={burst} />
         </div>
       </Section>
+
+      <FriendsDemo />
 
       <Section title="Skeleton">
         <Skeleton className="size-12 rounded-full" />
