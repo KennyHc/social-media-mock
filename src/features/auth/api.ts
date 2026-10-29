@@ -12,6 +12,8 @@ export async function signInWithGoogle(next = "/feed") {
 
 export async function signOut() {
   await supabaseBrowser().auth.signOut();
+  // Full reload on purpose: drops every cached query and in-memory state from the old session.
+  // eslint-disable-next-line @next/next/no-location-assign-relative-destination
   window.location.assign("/login");
 }
 
