@@ -35,7 +35,7 @@ Read this first if you are a new Claude Code session picking up this project. Al
 
 ## Next: M3, posts, photo upload and feed (plan proposed, awaiting the user's "go")
 - **Pending decision:** the user must answer **"validate"** or **"bucket-only"**.
-  - **"validate":** add `/api/posts/[id]/publish`. It verifies the user, checks each uploaded object's magic bytes (WebP, JPEG, PNG or AVIF), then publishes via a service-role-only DB function. This needs `SUPABASE_SERVICE_ROLE_KEY` on Vercel, server-side only. db-engineer adds the function and tests, and revokes `publish_post` from `authenticated`.
+  - **"validate":** add `/api/posts/[id]/publish`. It verifies the user, checks each uploaded object's magic bytes (WebP, JPEG, PNG or AVIF), then publishes via a service-role-only DB function. This needs `SUPABASE_SECRET_KEY` (`sb_secret_…`, not the legacy service role key) on Vercel, server-side only. db-engineer adds the function and tests, and revokes `publish_post` from `authenticated`.
   - **"bucket-only":** rely on the bucket's `allowed_mime_types` and `file_size_limit`, plus the `post_media` trigger.
 - **Orchestrator:**
   - `src/lib/images/` (off-main-thread resize to WebP at 1080 and 480, plus a 16 px LQIP);

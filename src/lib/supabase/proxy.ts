@@ -18,9 +18,9 @@ export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
   const path = request.nextUrl.pathname;
 
-  if (!env.supabaseUrl || !env.supabaseAnonKey) return response;
+  if (!env.supabaseUrl || !env.supabasePublishableKey) return response;
 
-  const supabase = createServerClient<Database>(env.supabaseUrl, env.supabaseAnonKey, {
+  const supabase = createServerClient<Database>(env.supabaseUrl, env.supabasePublishableKey, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (toSet) => {
