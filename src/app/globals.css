@@ -85,3 +85,40 @@ body {
     animation-duration: 1ms !important;
   }
 }
+
+/* === motion === */
+/* Skeleton shimmer: transform-only translate loop, see src/components/motion/Skeleton.tsx. */
+@keyframes skeleton-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, transparent, var(--shimmer), transparent);
+  animation: skeleton-shimmer 1.4s linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer {
+    display: none;
+  }
+  .skeleton {
+    animation: skeleton-pulse 2.4s ease-in-out infinite;
+  }
+}
+/* === end motion === */
