@@ -77,7 +77,34 @@ export function useScrollLock(active: boolean): void {
 }
 
 // Module-level stack of open dialogs: only the topmost reacts to Escape and Tab.
-const dialogStack: string[] = [];
+const dialogStack: { id: string; ref: RefObject<HTMLElement | null> }[] = [];
+const inerted = new Set<Element>();
+const SKIP_INERT = new Set(["SCRIPT", "STYLE", "LINK", "NEXTJS-PORTAL"]);
+
+/**
+ * Hides everything outside the topmost dialog from the accessibility tree and input
+ * (`inert`): every other child of <body>. Re-run on each stack change, so stacked
+ * dialogs hand over correctly and closing the last one restores the page. Only
+ * elements this function marked are ever un-marked.
+ */
+function syncInert(): void {
+  inerted.forEach((el) => el.removeAttribute("inert"));
+  inerted.clear();
+  const top = dialogStack[dialogStack.length - 1]?.ref.current;
+  if (!top) return;
+  for (const child of Array.from(document.body.children)) {
+    if (
+      child.contains(top) ||
+      SKIP_INERT.has(child.tagName) ||
+      child.hasAttribute("inert") ||
+      // Live regions (toasts) must keep announcing while a dialog is open.
+      child.hasAttribute("data-keep-live")
+    )
+      continue;
+    child.setAttribute("inert", "");
+    inerted.add(child);
+  }
+}
 
 /**
  * Shared dialog behavior for Sheet and Modal layers: focus trap + restore,
@@ -91,16 +118,18 @@ export function useDialogBehavior(
 ): boolean {
   const present = useIsPresent();
   const id = useId();
-  const isTop = useCallback(() => dialogStack[dialogStack.length - 1] === id, [id]);
+  const isTop = useCallback(() => dialogStack[dialogStack.length - 1]?.id === id, [id]);
 
   useEffect(() => {
     if (!present) return;
-    dialogStack.push(id);
+    dialogStack.push({ id, ref });
+    syncInert();
     return () => {
-      const i = dialogStack.indexOf(id);
+      const i = dialogStack.findIndex((d) => d.id === id);
       if (i >= 0) dialogStack.splice(i, 1);
-      };
-  }, [present, id]);
+      syncInert();
+    };
+  }, [present, id, ref]);
 
   useFocusTrap(ref, present, isTop);
   useScrollLock(present);

@@ -95,6 +95,10 @@ export const timing = {
   breathe: 3,
   /** A rollback shake flag expires if its row never re-enters. */
   shakeFlagMs: 5000,
+  /** Playground only: delay before the demo rollback re-inserts a row. */
+  rollbackDemoMs: 600,
+  /** Safety net: a re-presented row counts as entered after this long (s of enter + margin), ms. */
+  reenterSettleMs: 400,
 } as const;
 
 /** Opacity constants. */

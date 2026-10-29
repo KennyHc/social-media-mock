@@ -126,6 +126,37 @@ body {
     animation: skeleton-pulse 2.4s ease-in-out infinite;
   }
 }
+/* BreathingCircles: transform and opacity only. Values come from tokens (timing.breathe,
+   scale.breathe, distance.breatheX, opacity.breatheLow, ease.inOut) via inline CSS variables. */
+@keyframes breathe {
+  from {
+    transform: translateX(calc(var(--breathe-x) * -1)) scale(1);
+    opacity: var(--breathe-lo);
+  }
+  to {
+    transform: translateX(var(--breathe-x)) scale(var(--breathe-scale));
+    opacity: 1;
+  }
+}
+.breathing-circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: var(--breathe-lo);
+  animation: breathe var(--breathe-duration) var(--breathe-ease) infinite alternate;
+  will-change: transform, opacity;
+}
+.breathing-circle-b {
+  /* A full cycle ahead of the first circle = counter-phase with alternate. */
+  animation-delay: calc(var(--breathe-duration) * -1);
+}
+.breathing[data-paused="true"] .breathing-circle {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .breathing-circle {
+    animation: none;
+  }
+}
 /* Splash: hidden before first paint on repeat visits (root layout sets data-splash). */
 :root[data-splash="skip"] .splash-overlay {
   display: none;

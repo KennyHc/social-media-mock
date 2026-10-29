@@ -118,6 +118,13 @@ class RowState {
   setEntered(v: boolean) {
     this.entered = v;
   }
+  private gone = false;
+  markGone() {
+    this.gone = true;
+  }
+  wasGone() {
+    return this.gone;
+  }
   clearDelay() {
     this.delay = 0;
   }
@@ -194,11 +201,24 @@ export function AnimatedRow({
     return reduced ? reduceVariants(v) : v;
   })();
 
+  const tryShake = useRef(() => {});
   useEffect(() => {
-    if (!present) rs.setEntered(false);
+    if (!present) {
+      rs.setEntered(false);
+      rs.markGone();
+      return;
+    }
+    if (!rs.wasGone()) return;
+    // Re-presented mid-exit or after a rollback: the enter transition runs again.
+    // onAnimationComplete normally marks it entered; this timer is a safety net in case
+    // the interrupted animation never reports completion.
+    const t = setTimeout(() => {
+      rs.setEntered(true);
+      tryShake.current();
+    }, timing.reenterSettleMs);
+    return () => clearTimeout(t);
   }, [present, rs]);
 
-  const tryShake = useRef(() => {});
   useLayoutEffect(() => {
     rs.sync(id, exit);
     tryShake.current = () => {
@@ -231,7 +251,13 @@ export function AnimatedRow({
       initial="hidden"
       animate="show"
       exit="gone"
-      style={{ ...style, x, opacity: reduced ? dip : undefined }}
+      style={{
+        ...style,
+        x,
+        // Never put `opacity: undefined` here: it overrides the initial opacity 0 of rows mounted later.
+        ...(reduced ? { opacity: dip } : null),
+        ...(present ? null : { pointerEvents: "none" as const }),
+      }}
       onAnimationComplete={(def) => {
         if (def === "show") {
           rs.clearDelay();

@@ -75,14 +75,14 @@ function FriendsDemo() {
       setAccepted((a) => a.filter((i) => i !== req.id));
     }, timing.acceptHoldMs);
   };
-  const rollback = () => {
+  const rollback = (ms: number = timing.rollbackDemoMs) => {
     const req = rows[0];
     if (!req) return;
     remove(req.id, "dismiss");
     later(() => {
       setRows((r) => (r.some((x) => x.id === req.id) ? r : [req, ...r]));
       shake(req.id);
-    }, 600);
+    }, ms);
   };
 
   return (
@@ -107,7 +107,9 @@ function FriendsDemo() {
           ))}
         </AnimatedList>
       </RollbackShakeProvider>
-      <Button size="sm" variant={small} onClick={rollback}>Rollback</Button>
+      <Button size="sm" variant={small} onClick={() => rollback()}>Rollback</Button>
+      <Button size="sm" variant={small} onClick={() => rollback(30)}>Rollback 30ms</Button>
+      <Button size="sm" variant={small} onClick={() => rollback(120)}>Rollback 120ms</Button>
       <Button size="sm" variant={small} onClick={() => setRows(REQUESTS)}>Reset</Button>
       <span className="flex items-center gap-2">
         <Button size="sm" variant={small} aria-label="Decrease badge" onClick={() => setBadge((n) => Math.max(0, n - 1))}>-</Button>

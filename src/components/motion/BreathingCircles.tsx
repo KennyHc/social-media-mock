@@ -1,49 +1,42 @@
 "use client";
 
-import { motion, useAnimationControls } from "motion/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import { cn } from "@/lib/cn";
 import { distance, ease, opacity, scale, timing } from "@/motion/tokens";
-import { usePrefersReducedMotion } from "@/motion/reduced-motion";
 
 export type BreathingCirclesProps = {
   size?: number;
   className?: string;
 };
 
-const loop = { duration: timing.breathe, ease: ease.inOut, repeat: Infinity, repeatType: "mirror" } as const;
-const lo = { scale: 1, x: -distance.breatheX, opacity: opacity.breatheLow };
-const hi = { scale: scale.breathe, x: distance.breatheX, opacity: 1 };
+/** Token values handed to the CSS keyframes in globals.css (`@keyframes breathe`). */
+const vars = {
+  "--breathe-duration": `${timing.breathe}s`,
+  "--breathe-ease": `cubic-bezier(${ease.inOut.join(",")})`,
+  "--breathe-scale": scale.breathe,
+  "--breathe-x": `${distance.breatheX}px`,
+  "--breathe-lo": opacity.breatheLow,
+} as CSSProperties;
 
 /**
- * Empty-state illustration: the Logo's two circles breathing. Each circle goes
- * scale 1 to 1.04, x -2 to 2 px (opposite directions) and opacity .85 to 1 over
- * 3 s (ease.inOut, mirrored loop); the circles are in counter-phase. Static under
- * reduced motion; paused while the tab is hidden or the element is offscreen.
+ * Empty-state illustration: the Logo's two circles breathing. Pure CSS keyframes
+ * (transform and opacity, compositor-friendly, no JS per frame): scale 1 to 1.04,
+ * x -2 to 2 px (opposite directions) and opacity .85 to 1 over 3 s, ease.inOut,
+ * alternating. The second circle is a full cycle ahead (negative delay) so the two
+ * are in counter-phase. Static under reduced motion (CSS media query); paused via
+ * `animation-play-state` while the tab is hidden or the element is offscreen, which
+ * resumes from the current frame.
  */
 export function BreathingCircles({ size = 96, className }: BreathingCirclesProps) {
-  const reduced = usePrefersReducedMotion();
   const ref = useRef<SVGSVGElement>(null);
-  const a = useAnimationControls();
-  const b = useAnimationControls();
 
   useEffect(() => {
     const el = ref.current;
-    if (reduced || !el) return;
+    if (!el) return;
     let onScreen = true;
     let tabVisible = !document.hidden;
-    let running = false;
     const sync = () => {
-      const want = onScreen && tabVisible;
-      if (want === running) return;
-      running = want;
-      if (want) {
-        void a.start({ scale: [lo.scale, hi.scale], x: [lo.x, hi.x], opacity: [lo.opacity, hi.opacity], transition: loop });
-        void b.start({ scale: [hi.scale, lo.scale], x: [hi.x, lo.x], opacity: [hi.opacity, lo.opacity], transition: loop });
-      } else {
-        a.stop();
-        b.stop();
-      }
+      el.dataset.paused = String(!(onScreen && tabVisible));
     };
     const onVis = () => {
       tabVisible = !document.hidden;
@@ -59,10 +52,8 @@ export function BreathingCircles({ size = 96, className }: BreathingCirclesProps
     return () => {
       io.disconnect();
       document.removeEventListener("visibilitychange", onVis);
-      a.stop();
-      b.stop();
     };
-  }, [reduced, a, b]);
+  }, []);
 
   return (
     <svg
@@ -72,10 +63,17 @@ export function BreathingCircles({ size = 96, className }: BreathingCirclesProps
       viewBox="0 0 96 96"
       fill="none"
       aria-hidden="true"
-      className={cn("pointer-events-none shrink-0", className)}
+      style={vars}
+      className={cn("breathing pointer-events-none shrink-0", className)}
     >
-      <motion.circle cx="38" cy="48" r="20" fill="var(--accent)" initial={lo} animate={a} />
-      <motion.circle cx="58" cy="48" r="20" fill="var(--accent-3)" initial={hi} animate={b} />
+      <circle className="breathing-circle" cx="38" cy="48" r="20" fill="var(--accent)" />
+      <circle
+        className="breathing-circle breathing-circle-b"
+        cx="58"
+        cy="48"
+        r="20"
+        fill="var(--accent-3)"
+      />
     </svg>
   );
 }

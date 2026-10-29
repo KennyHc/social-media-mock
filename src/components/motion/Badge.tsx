@@ -22,7 +22,7 @@ export type BadgeProps = {
   /** Counts above this show as "max+". */
   max?: number;
   className?: string;
-  /** Accessible label. Defaults to "`count` new". */
+  /** Unused: the badge is a purely visual `aria-hidden` mark; its parent link carries the accessible name. */
   label?: string;
 };
 
@@ -32,15 +32,14 @@ export type BadgeProps = {
  * AnimatedNumber. Renders nothing at 0. Opacity only under reduced motion
  * (MotionConfig reducedMotion="user" strips the scale).
  */
-export function Badge({ count, max = 9, className, label }: BadgeProps) {
+export function Badge({ count, max = 9, className }: BadgeProps) {
   const reduced = usePrefersReducedMotion();
   return (
     <AnimatePresence>
       {count > 0 && (
         <motion.span
           key="badge"
-          role="status"
-          aria-label={label ?? `${count} new`}
+          aria-hidden="true"
           variants={reduced ? reducedVariants : variants}
           initial="hidden"
           animate="show"
