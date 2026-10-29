@@ -9,3 +9,5 @@
 - Theme colors only via Tailwind tokens defined in `src/app/globals.css`.
 - File ownership per agent is listed in `.claude/agents/*.md`. Orchestrator owns `src/lib/**`, `src/types/**` (except generated `database.ts`), `src/proxy.ts`, and config files.
 - Checks: `npm run typecheck && npm run lint && npm test`.
+- Accepted motion exception: SVG `pathLength` (stroke-dashoffset) may animate; it is paint-only.
+- Theme tokens meet WCAG AA: text on accent uses `text-accent-fg`, text on danger uses `text-danger-fg`, input borders use `border-border-strong`.
