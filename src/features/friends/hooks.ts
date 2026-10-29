@@ -103,6 +103,11 @@ const addFriend = (qc: QueryClient, user: UserSummary) =>
       : [{ ...user, since: new Date().toISOString() }, ...(fs ?? [])],
   );
 
+// onMutate runs before mutationFn, so the optimistic friend is already cached:
+// exclude them when deciding whether this is the first friend.
+const hasOtherFriends = (qc: QueryClient, userId: string) =>
+  (qc.getQueryData<Friend[]>(qk.friends()) ?? []).some((f) => f.id !== userId);
+
 function settle(qc: QueryClient) {
   return Promise.all([
     qc.invalidateQueries({ queryKey: qk.friends() }),
@@ -128,7 +133,7 @@ export function useSendFriendRequest() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (user: UserSummary & { relationship?: Relationship }) => {
-      const hadFriends = (qc.getQueryData<Friend[]>(qk.friends())?.length ?? 0) > 0;
+      const hadFriends = hasOtherFriends(qc, user.id);
       const res = await sendFriendRequest(user.id);
       return res.status === "accepted"
         ? ((hadFriends ? "small" : "large") as CelebrationTier)
@@ -184,7 +189,7 @@ export function useAcceptFriendRequest() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (req: FriendRequest): Promise<CelebrationTier> => {
-      const hadFriends = (qc.getQueryData<Friend[]>(qk.friends())?.length ?? 0) > 0;
+      const hadFriends = hasOtherFriends(qc, req.id);
       await respondFriendRequest(req.request_id, true);
       return hadFriends ? "small" : "large";
     },
