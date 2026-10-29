@@ -130,4 +130,24 @@ body {
 :root[data-splash="skip"] .splash-overlay {
   display: none;
 }
+/* Safety nets for no-JS / slow-JS: SSR'd motion content must never stay hidden or covering the page. */
+@keyframes splash-safety {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+.splash-overlay {
+  animation: splash-safety 1ms linear 2.5s forwards;
+}
+@keyframes stagger-safety {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* data-stagger flips to "ready" on hydration, which disarms this. */
+[data-stagger="ssr"] {
+  animation: stagger-safety 1ms linear 2.5s forwards;
+}
 /* === end motion === */

@@ -9,7 +9,7 @@ import { CheckmarkDraw } from "./CheckmarkDraw";
 import { getServerToasts, getToasts, subscribeToasts, toast, type ToastItem } from "./toast";
 
 /**
- * Renders the toast stack (max 3) in a polite live region. Toasts spring in
+ * Renders the toast stack (max 3). Errors are role="alert", others role="status". Toasts spring in
  * from the top, swipe horizontally to dismiss, auto-exit after 4 s (paused on
  * hover or drag) and re-flow with layout animation.
  */
@@ -19,7 +19,6 @@ export function Toaster() {
     <div
       role="region"
       aria-label="Notifications"
-      aria-live="polite"
       className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex flex-col items-center gap-2 px-4 pt-[max(1rem,env(safe-area-inset-top))]"
     >
       <AnimatePresence mode="popLayout">
@@ -61,7 +60,8 @@ function ToastView({ item }: { item: ToastItem }) {
   return (
     <motion.div
       layout
-      role={item.kind === "error" ? "alert" : undefined}
+      // Role on the item only (no live container), so each toast is announced once.
+      role={item.kind === "error" ? "alert" : "status"}
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.6}

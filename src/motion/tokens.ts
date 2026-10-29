@@ -3,6 +3,8 @@ import type { Transition } from "motion/react";
 /**
  * Single source of truth for all motion values in Circle.
  * No literal durations, easings or spring numbers belong anywhere else.
+ * Accepted exception to "transform and opacity only": animating SVG `pathLength`
+ * (paint-only and cheap) for the checkmark, progress ring and splash ring.
  */
 
 type Bezier = [number, number, number, number];
@@ -54,6 +56,8 @@ export const distance = {
   toastY: 16,
   /** Digit roll offset for AnimatedNumber (percent of its own height). */
   roll: "60%",
+  /** Splash overlay lift on exit. */
+  splashLift: 8,
 } as const;
 
 /** Scale applied while a pressable is held down. */
@@ -108,12 +112,19 @@ export const particles = {
     spread: 70,
     ticks: 200,
   },
-  small: { count: 40, spread: 60 },
+  small: {
+    count: 40,
+    spread: 60,
+    /** Companion ring of round particles fired with the small pop. */
+    ring: { count: 14, velocityScale: 0.5, scalar: 0.8 },
+  },
   large: {
     count: 160,
     bursts: 5,
     /** Total time the shower is spread over, ms. */
     durationMs: 1200,
+    /** Side bursts fan out by this angle (deg) from this x offset (0-1 of viewport). */
+    fan: { angle: 25, offset: 0.2 },
   },
   /** DOM burst (ParticleBurst). */
   burst: {

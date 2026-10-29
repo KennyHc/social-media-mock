@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { usePrefersReducedMotion } from "@/motion/reduced-motion";
-import { duration, ease, scale, spring, timing } from "@/motion/tokens";
+import { distance, duration, ease, scale, spring, timing } from "@/motion/tokens";
 
 const KEY = "splash-shown";
 
@@ -79,7 +79,7 @@ export function Splash({ force, onDone }: SplashProps) {
           exit={
             reduced
               ? { opacity: 0, transition: { duration: timing.reducedFade } }
-              : { opacity: 0, y: -8, transition: { duration: duration.micro, ease: ease.in } }
+              : { opacity: 0, y: -distance.splashLift, transition: { duration: duration.micro, ease: ease.in } }
           }
         >
           <motion.svg

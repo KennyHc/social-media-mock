@@ -101,16 +101,17 @@ export async function celebrate({
         }),
         shoot({
           ...base,
-          particleCount: particles.burst.count + 4,
+          particleCount: particles.small.ring.count,
           spread: 360,
-          startVelocity: startVelocity * 0.5,
+          startVelocity: startVelocity * particles.small.ring.velocityScale,
           shapes: ["circle"],
-          scalar: 0.8,
+          scalar: particles.small.ring.scalar,
           origin: o,
         }),
       );
     } else {
-      const { count, bursts, durationMs } = particles.large;
+      const { count, bursts, durationMs, fan } = particles.large;
+      const middle = Math.floor(bursts / 2);
       const per = Math.round(count / bursts);
       for (let i = 0; i < bursts; i++) {
         runs.push(
@@ -122,8 +123,8 @@ export async function celebrate({
                 particleCount: per,
                 spread,
                 startVelocity,
-                angle: i === 2 ? 90 : 90 - side * 25,
-                origin: { x: clamp01(o.x + (i === 2 ? 0 : side * 0.2)), y: o.y },
+                angle: i === middle ? 90 : 90 - side * fan.angle,
+                origin: { x: clamp01(o.x + (i === middle ? 0 : side * fan.offset)), y: o.y },
               });
               (done ?? Promise.resolve()).then(() => resolve(), () => resolve());
             }, (i * durationMs) / bursts);

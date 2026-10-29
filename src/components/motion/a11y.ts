@@ -1,7 +1,7 @@
 "use client";
 
 import { useIsPresent } from "motion/react";
-import { useEffect, useSyncExternalStore, type RefObject } from "react";
+import { useCallback, useEffect, useId, useSyncExternalStore, type RefObject } from "react";
 
 const FOCUSABLE =
   'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
@@ -10,7 +10,11 @@ const FOCUSABLE =
  * Traps Tab focus inside `ref` while `active`, moves focus in on activation and
  * restores it to the previously focused element (the opener) on deactivation.
  */
-export function useFocusTrap(ref: RefObject<HTMLElement | null>, active: boolean): void {
+export function useFocusTrap(
+  ref: RefObject<HTMLElement | null>,
+  active: boolean,
+  isTop: () => boolean = () => true,
+): void {
   useEffect(() => {
     const el = ref.current;
     if (!active || !el) return;
@@ -18,7 +22,7 @@ export function useFocusTrap(ref: RefObject<HTMLElement | null>, active: boolean
     (el.querySelector<HTMLElement>(FOCUSABLE) ?? el).focus({ preventScroll: true });
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Tab") return;
+      if (e.key !== "Tab" || !isTop()) return;
       const items = Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE));
       if (items.length === 0) {
         e.preventDefault();
@@ -44,7 +48,7 @@ export function useFocusTrap(ref: RefObject<HTMLElement | null>, active: boolean
       document.removeEventListener("keydown", onKeyDown);
       if (opener && document.contains(opener)) opener.focus({ preventScroll: true });
     };
-  }, [ref, active]);
+  }, [ref, active, isTop]);
 }
 
 let lockCount = 0;
@@ -72,29 +76,45 @@ export function useScrollLock(active: boolean): void {
   }, [active]);
 }
 
+// Module-level stack of open dialogs: only the topmost reacts to Escape and Tab.
+const dialogStack: string[] = [];
+
 /**
  * Shared dialog behavior for Sheet and Modal layers: focus trap + restore,
  * scroll lock and Escape to close. Active only while the layer is present
- * (not while it plays its exit animation).
+ * (not while it plays its exit animation) and only the topmost dialog handles
+ * Escape and Tab. Returns whether the layer is present.
  */
 export function useDialogBehavior(
   ref: RefObject<HTMLElement | null>,
   onClose: () => void,
 ): boolean {
   const present = useIsPresent();
-  useFocusTrap(ref, present);
+  const id = useId();
+  const isTop = useCallback(() => dialogStack[dialogStack.length - 1] === id, [id]);
+
+  useEffect(() => {
+    if (!present) return;
+    dialogStack.push(id);
+    return () => {
+      const i = dialogStack.indexOf(id);
+      if (i >= 0) dialogStack.splice(i, 1);
+      };
+  }, [present, id]);
+
+  useFocusTrap(ref, present, isTop);
   useScrollLock(present);
   useEffect(() => {
     if (!present) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && isTop()) {
         e.stopPropagation();
         onClose();
       }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [present, onClose]);
+  }, [present, onClose, isTop]);
   return present;
 }
 

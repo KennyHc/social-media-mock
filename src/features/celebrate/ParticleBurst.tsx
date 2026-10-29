@@ -79,7 +79,6 @@ export function ParticleBurst({ trigger, className }: ParticleBurstProps) {
     };
   }, [trigger, reduced]);
 
-  if (reduced) return null;
   return (
     <span
       ref={host}

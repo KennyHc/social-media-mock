@@ -12,10 +12,10 @@ import {
 import { cn } from "@/lib/cn";
 import { CheckmarkDraw } from "@/components/motion/CheckmarkDraw";
 import { PressableScale } from "@/components/motion/PressableScale";
+import { Spinner } from "@/components/motion/Spinner";
 import { useShake } from "@/components/motion/Shake";
-import { usePrefersReducedMotion } from "@/motion/reduced-motion";
 import { haptic } from "@/motion/haptics";
-import { ease, enter, exitT, timing } from "@/motion/tokens";
+import { enter, exitT, timing } from "@/motion/tokens";
 
 export type ButtonState = "idle" | "loading" | "success" | "error";
 
@@ -38,7 +38,7 @@ const variants = {
   primary: "bg-accent text-accent-fg hover:brightness-105",
   secondary: "border border-border bg-surface-2 text-fg hover:brightness-95",
   ghost: "bg-transparent text-fg hover:bg-surface-2",
-  danger: "bg-danger text-accent-fg hover:brightness-105",
+  danger: "bg-danger text-danger-fg hover:brightness-105",
 } as const;
 
 const sizes = {
@@ -67,7 +67,6 @@ export function Button({
   type = "button",
   ...rest
 }: ButtonProps) {
-  const reduced = usePrefersReducedMotion();
   const [internal, setInternal] = useState<ButtonState>("idle");
   const state = stateProp ?? internal;
   const { controls, shake } = useShake();
@@ -114,6 +113,7 @@ export function Button({
   const busy = state === "loading";
   const labels = { ...defaultAnnounce, ...announce };
   return (
+    <>
     <PressableScale
       type={type}
       animate={controls}
@@ -122,7 +122,7 @@ export function Button({
       aria-disabled={busy || undefined}
       onClick={handleClick}
       className={cn(
-        "relative inline-flex select-none items-center justify-center gap-2 rounded-full font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+        "relative inline-flex select-none items-center justify-center gap-2 rounded-full font-medium transition-[background-color,border-color,color,filter] duration-150 disabled:cursor-not-allowed disabled:opacity-50",
         variants[variant],
         sizes[size],
         className,
@@ -145,7 +145,7 @@ export function Button({
               animate={{ opacity: 1, transition: enter }}
               exit={{ opacity: 0, transition: exitT }}
             >
-              <Spinner reduced={reduced} />
+              <Spinner />
             </motion.span>
           )}
           {state === "success" && (
@@ -166,25 +166,10 @@ export function Button({
           )}
         </AnimatePresence>
       </span>
-      <span className="sr-only" role="status" aria-live="polite">
-        {state === "idle" ? "" : labels[state]}
-      </span>
     </PressableScale>
-  );
-}
-
-function Spinner({ reduced }: { reduced: boolean }) {
-  return (
-    <motion.svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      animate={reduced ? { opacity: [1, 0.4, 1] } : { rotate: 360 }}
-      transition={{ duration: timing.spin, ease: ease.linear, repeat: Infinity }}
-    >
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
-      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-    </motion.svg>
+    <span className="sr-only" role="status" aria-live="polite">
+      {state === "idle" ? "" : labels[state]}
+    </span>
+    </>
   );
 }

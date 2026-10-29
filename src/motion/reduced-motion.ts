@@ -1,16 +1,32 @@
 "use client";
 
-import { useReducedMotion, type Variants } from "motion/react";
+import { useSyncExternalStore } from "react";
+import type { Variants } from "motion/react";
 
-/** True when the user prefers reduced motion. SSR-safe (false on the server). */
+const QUERY = "(prefers-reduced-motion: reduce)";
+
+/**
+ * True when the user prefers reduced motion. Hydration-safe: false on the server
+ * and during the hydration render, then updates, so the first client render
+ * matches the server HTML. Do not branch `initial` values on it; rely on
+ * MotionConfig reducedMotion="user" to strip transforms from animations.
+ */
 export function usePrefersReducedMotion(): boolean {
-  return useReducedMotion() ?? false;
+  return useSyncExternalStore(
+    (cb) => {
+      const mql = window.matchMedia(QUERY);
+      mql.addEventListener("change", cb);
+      return () => mql.removeEventListener("change", cb);
+    },
+    () => window.matchMedia(QUERY).matches,
+    () => false,
+  );
 }
 
 /** Non-hook check for imperative code (event handlers, celebrate()). */
 export function prefersReducedMotion(): boolean {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  return window.matchMedia(QUERY).matches;
 }
 
 const STRIPPED = new Set([

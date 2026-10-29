@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/cn";
 import { distance, enter, exitT, layout, scale, staggerDelay } from "@/motion/tokens";
 import { usePrefersReducedMotion } from "@/motion/reduced-motion";
+import { useIsClient } from "./a11y";
 
 export type StaggerListProps = {
   children: ReactNode;
@@ -58,9 +59,12 @@ export type StaggerItemProps = Omit<
 export function StaggerItem({ index = 0, as = "div", ...props }: StaggerItemProps) {
   const reduced = usePrefersReducedMotion();
   const delay = staggerDelay(index);
+  const hydrated = useIsClient();
   const Comp = motion[as] as typeof motion.div;
   return (
     <Comp
+      // "ssr" arms a CSS safety net in globals.css that reveals the item if JS never hydrates.
+      data-stagger={hydrated ? "ready" : "ssr"}
       layout={!reduced}
       initial={reduced ? { opacity: 0 } : { opacity: 0, y: distance.enterY }}
       animate={{ opacity: 1, y: 0, transition: { ...enter, delay } }}

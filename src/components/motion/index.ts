@@ -6,6 +6,7 @@ export * from "./Shake";
 export * from "./CheckmarkDraw";
 export * from "./ProgressRing";
 export * from "./Skeleton";
+export * from "./Spinner";
 export * from "./Sheet";
 export { Modal, type DialogProps } from "./Modal";
 export * from "./Toaster";

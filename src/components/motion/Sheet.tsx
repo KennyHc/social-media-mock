@@ -4,11 +4,12 @@ import {
   AnimatePresence,
   animate,
   motion,
+  useDragControls,
   useMotionValue,
   useTransform,
   type PanInfo,
 } from "motion/react";
-import { useId, useRef, type CSSProperties } from "react";
+import { useEffect, useId, useRef, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
 import { usePrefersReducedMotion } from "@/motion/reduced-motion";
@@ -23,7 +24,7 @@ export type SheetProps = DialogProps & {
 
 /**
  * Bottom sheet. Opens y 100% to 0 on spring.sheet with a fading backdrop; the
- * whole sheet drags on y and dismisses past 30% of its height or 500 px/s,
+ * grabber and header drag the sheet on y and dismisses past 30% of its height or 500 px/s,
  * otherwise snaps back on spring.sheet. Backdrop opacity tracks the drag.
  * Exit is ease-in at exit(duration.medium). From 640px up it renders as a Modal.
  */
@@ -46,6 +47,13 @@ function SheetLayer({ onOpenChange, title, children, className, height }: SheetP
   const y = useMotionValue(0);
   const progress = useMotionValue(0);
   const dim = useTransform(progress, [0, 1], [1, 0]);
+  const dragControls = useDragControls();
+
+  // Reopening mid-exit reinstates this layer: clear any dimming left from a drag.
+  // (y is driven back to 0 by the animate prop, so it reverses smoothly.)
+  useEffect(() => {
+    if (present) progress.set(0);
+  }, [present, progress]);
 
   const onDrag = (_: PointerEvent, info: PanInfo) => {
     const h = ref.current?.offsetHeight ?? 1;
@@ -83,6 +91,8 @@ function SheetLayer({ onOpenChange, title, children, className, height }: SheetP
         aria-labelledby={titleId}
         tabIndex={-1}
         drag="y"
+        dragControls={dragControls}
+        dragListener={false}
         dragConstraints={{ top: 0 }}
         dragElastic={{ top: 0.08, bottom: 0.6 }}
         dragMomentum={false}
@@ -90,7 +100,7 @@ function SheetLayer({ onOpenChange, title, children, className, height }: SheetP
         onDragEnd={onDragEnd}
         style={{ y, height }}
         className={cn(
-          "absolute inset-x-0 bottom-0 max-h-[92dvh] overflow-y-auto rounded-t-3xl border-t border-border bg-surface pb-[max(1rem,env(safe-area-inset-bottom))] text-fg shadow-xl outline-none",
+          "absolute inset-x-0 bottom-0 max-h-[92dvh] overflow-y-auto overscroll-contain rounded-t-3xl border-t border-border bg-surface pb-[max(1rem,env(safe-area-inset-bottom))] text-fg shadow-xl outline-none",
           className,
         )}
         initial={reduced ? { opacity: 0 } : { y: "100%" }}
@@ -101,13 +111,17 @@ function SheetLayer({ onOpenChange, title, children, className, height }: SheetP
             : { y: "100%", transition: { duration: exit(duration.medium), ease: ease.in } }
         }
       >
-        <div className="mx-auto mt-2 h-1.5 w-10 rounded-full bg-border" aria-hidden="true" />
-        <div className="px-5 pt-3">
-          <h2 id={titleId} className="mb-3 text-lg font-semibold">
+        {/* Drag handle area: grabber + header only, so content can scroll freely. */}
+        <div
+          className="touch-none cursor-grab px-5 pb-3 pt-2 active:cursor-grabbing"
+          onPointerDown={(e) => dragControls.start(e)}
+        >
+          <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-border-strong" aria-hidden="true" />
+          <h2 id={titleId} className="text-lg font-semibold">
             {title}
           </h2>
-          {children}
         </div>
+        <div className="px-5">{children}</div>
       </motion.div>
     </div>
   );

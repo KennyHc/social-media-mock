@@ -15,7 +15,6 @@ import {
   Splash,
   StaggerItem,
   StaggerList,
-  Toaster,
   toast,
 } from "@/components/motion";
 import { Button } from "@/components/ui/Button";
@@ -191,7 +190,6 @@ export function MotionPlayground() {
           <Button variant="danger" onClick={() => setModal(false)}>Remove</Button>
         </div>
       </Modal>
-      <Toaster />
     </main>
   );
 }

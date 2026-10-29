@@ -51,7 +51,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       onClick={toggle}
       aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
       className={cn(
-        "relative grid size-10 place-items-center rounded-full border border-border bg-surface text-fg",
+        "relative grid size-10 place-items-center rounded-full border border-border bg-surface text-fg transition-[background-color,border-color,color] duration-150",
         className,
       )}
     >

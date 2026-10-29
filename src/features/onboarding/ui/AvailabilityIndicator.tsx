@@ -1,28 +1,9 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { CheckmarkDraw } from "@/components/motion";
-import { usePrefersReducedMotion } from "@/motion/reduced-motion";
+import { CheckmarkDraw, Spinner } from "@/components/motion";
 import type { Availability } from "@/features/onboarding/hooks";
-import { ease, enter, exitT, timing } from "@/motion/tokens";
-
-function Spinner() {
-  const reduced = usePrefersReducedMotion();
-  return (
-    <motion.svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      className="text-fg-muted"
-      animate={reduced ? { opacity: [1, 0.4, 1] } : { rotate: 360 }}
-      transition={{ duration: timing.spin, ease: ease.linear, repeat: Infinity }}
-    >
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
-      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-    </motion.svg>
-  );
-}
+import { enter, exitT } from "@/motion/tokens";
 
 function XIcon() {
   return (
@@ -62,7 +43,7 @@ export function AvailabilityIndicator({
             animate={{ opacity: 1, transition: enter }}
             exit={{ opacity: 0, transition: exitT }}
           >
-            {kind === "checking" && <Spinner />}
+            {kind === "checking" && <Spinner className="text-fg-muted" />}
             {kind === "available" && <CheckmarkDraw size={20} color="var(--success)" />}
             {kind === "bad" && <XIcon />}
           </motion.span>
