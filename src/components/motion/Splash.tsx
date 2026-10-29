@@ -1,10 +1,9 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { usePrefersReducedMotion } from "@/motion/reduced-motion";
-import { duration, ease, enter, scale, spring, timing } from "@/motion/tokens";
-import { useIsClient } from "./a11y";
+import { duration, ease, scale, spring, timing } from "@/motion/tokens";
 
 const KEY = "splash-shown";
 
@@ -14,31 +13,48 @@ export type SplashProps = {
   onDone?: () => void;
 };
 
-function alreadyShown(): boolean {
-  try {
-    return sessionStorage.getItem(KEY) === "1";
-  } catch {
-    return false;
+const noopSubscribe = () => () => {};
+
+let decided: boolean | undefined;
+
+/**
+ * Decided once per page load, before this component writes the flag. Prefers the
+ * pre-paint script's `data-splash`, falling back to sessionStorage.
+ */
+function shouldSkip(): boolean {
+  if (decided === undefined) {
+    const attr = document.documentElement.dataset.splash;
+    if (attr) {
+      decided = attr === "skip";
+    } else {
+      try {
+        decided = sessionStorage.getItem(KEY) === "1";
+      } catch {
+        decided = false;
+      }
+    }
   }
+  return decided;
 }
 
 /**
- * Branded launch animation, once per session. Renders nothing on the server.
+ * Branded launch animation, once per session. Server-renders the overlay so there is no flash; skipped on repeat visits via `data-splash`.
  * The logo scales in (spring.gentle) while an accent ring strokes in, then the
  * overlay lifts 8px and fades out (ease-in). Never blocks input; under reduced
  * motion it is a plain 150 ms fade. Mount once at the app root next to the content.
  */
-export function Splash(props: SplashProps) {
-  const isClient = useIsClient();
-  return isClient ? <SplashInner {...props} /> : null;
-}
-
-function SplashInner({ force, onDone }: SplashProps) {
+export function Splash({ force, onDone }: SplashProps) {
   const reduced = usePrefersReducedMotion();
-  const [visible, setVisible] = useState(() => force || !alreadyShown());
+  const skip = useSyncExternalStore(
+    noopSubscribe,
+    () => !force && shouldSkip(),
+    () => false,
+  );
+  const [visible, setVisible] = useState(true);
+  const run = visible && !skip;
 
   useEffect(() => {
-    if (!visible) return;
+    if (!run) return;
     try {
       sessionStorage.setItem(KEY, "1");
     } catch {
@@ -49,16 +65,17 @@ function SplashInner({ force, onDone }: SplashProps) {
       reduced ? timing.reducedFade * 1000 : timing.splashHoldMs,
     );
     return () => clearTimeout(id);
-  }, [visible, reduced]);
+  }, [run, reduced]);
+
+  if (skip) return null;
 
   return (
     <AnimatePresence onExitComplete={onDone}>
       {visible && (
         <motion.div
           aria-hidden="true"
-          className="pointer-events-none fixed inset-0 z-[100] grid place-items-center bg-bg"
-          initial={{ opacity: reduced ? 0 : 1 }}
-          animate={{ opacity: 1, transition: { duration: timing.reducedFade } }}
+          className="splash-overlay pointer-events-none fixed inset-0 z-[100] grid place-items-center bg-bg"
+          initial={{ opacity: 1 }}
           exit={
             reduced
               ? { opacity: 0, transition: { duration: timing.reducedFade } }
@@ -70,9 +87,9 @@ function SplashInner({ force, onDone }: SplashProps) {
             height="96"
             viewBox="0 0 96 96"
             fill="none"
-            initial={reduced ? false : { opacity: 0, scale: scale.popFrom }}
+            initial={reduced ? false : { opacity: 1, scale: scale.popFrom }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ opacity: enter, scale: spring.gentle }}
+            transition={{ scale: spring.gentle }}
           >
             <circle cx="38" cy="48" r="20" fill="var(--accent)" fillOpacity="0.9" />
             <circle cx="58" cy="48" r="20" fill="var(--accent-3)" fillOpacity="0.8" />

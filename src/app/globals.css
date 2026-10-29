@@ -121,4 +121,8 @@ body {
     animation: skeleton-pulse 2.4s ease-in-out infinite;
   }
 }
+/* Splash: hidden before first paint on repeat visits (root layout sets data-splash). */
+:root[data-splash="skip"] .splash-overlay {
+  display: none;
+}
 /* === end motion === */
