@@ -12,7 +12,8 @@
     "test:unit": "vitest run tests/unit",
     "test:rls": "vitest run tests/rls",
     "format": "prettier --write .",
-    "db:types": "supabase gen types typescript --local > src/types/database.ts"
+    "db:types": "supabase gen types typescript --local > src/types/database.ts",
+    "db:reset:fallback": "bash tests/rls/reset-fallback.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
