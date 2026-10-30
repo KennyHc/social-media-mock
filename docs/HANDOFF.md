@@ -26,9 +26,7 @@ Read this first if you are a new Claude Code session picking up this project. Al
 - **Dev harnesses (development only):** `/dev/motion` (every primitive) and `/dev/friends` (the real friends screen, for Playwright with mocked Supabase RPCs).
 
 ## Open items
-1. **Not yet verified on real Supabase.** The RLS tests ran on plain Postgres 16 with stubs, because the cloud container couldn't pull Docker images. Locally, run:
-   `npx supabase start && npx supabase db reset && npm run test:rls`
-   The fallback is `npm run db:reset:fallback` against Postgres on port 54322.
+1. **Verified on hosted Supabase (2026-10-29).** All 10 migrations are applied to project `rzqybhlvrrplbkwsmjvv` (history recorded in `supabase_migrations.schema_migrations`), and all 83 RLS tests pass against it. Hosted Supabase blocks SQL deletes on storage tables, so `tests/rls/db.ts` sets `storage.allow_delete_query` on test connections. `DATABASE_URL` uses the direct host, which is IPv6-only; switch to the Session pooler if it times out. Google sign-in against the hosted project is not yet tested.
 2. **Bundle size:** first-load JS is about 330 KB gzipped on `/friends`, and about 282 KB on `/login`. Investigate in M6.
 3. **Toasts:** each toast now sets its own announcement role, which some screen readers don't read reliably when the element is added. Revisit in M7.
 4. **Avatars bucket:** readable by any authenticated user, so search results and friend requests can show a face. The user hasn't objected.

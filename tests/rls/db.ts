@@ -11,6 +11,13 @@ export const DATABASE_URL =
 
 export const pool = new pg.Pool({ connectionString: DATABASE_URL, max: 4 });
 
+// Hosted Supabase blocks SQL deletes on storage tables (storage.protect_delete)
+// unless the session opts in. The tests only write object metadata rows, never
+// files, so opting in is safe; RLS still applies once a test switches role.
+pool.on("connect", (c) => {
+  c.query("select set_config('storage.allow_delete_query', 'true', false)").catch(() => {});
+});
+
 export type Client = pg.PoolClient;
 
 const created: string[] = [];
