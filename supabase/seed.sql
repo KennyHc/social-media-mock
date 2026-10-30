@@ -1,0 +1,3 @@
+-- Local seed for `supabase db reset`. Intentionally empty: the RLS test suite
+-- (tests/rls) creates and cleans up its own users and data, and real users
+-- sign in with Google, which creates their profile via trigger.

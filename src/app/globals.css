@@ -1,0 +1,184 @@
+@import "tailwindcss";
+
+/* Theme tokens. Components use the Tailwind color names below, never raw hex. */
+:root {
+  --bg: #fbfaf8;
+  --surface: #ffffff;
+  --surface-2: #f3f1ee;
+  --border: #e7e3de;
+  --fg: #1a1715;
+  --fg-muted: #6f6a64;
+  --accent: #d92d50;
+  --accent-fg: #ffffff;
+  --accent-2: #ffb547;
+  --accent-3: #7c5cff;
+  --danger: #c62a2f;
+  --danger-fg: #ffffff;
+  --success: #18794e;
+  --border-strong: #9a938b;
+  --shimmer: rgba(255, 255, 255, 0.55);
+  --backdrop: rgba(20, 16, 12, 0.45);
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0e0d0c;
+  --surface: #171615;
+  --surface-2: #211f1d;
+  --border: #2d2a27;
+  --fg: #f4f1ec;
+  --fg-muted: #a09a93;
+  --accent: #ff5c7a;
+  --accent-fg: #1a0a0e;
+  --accent-2: #ffc266;
+  --accent-3: #9a82ff;
+  --danger: #ff6369;
+  --danger-fg: #1a0a0a;
+  --success: #3dd68c;
+  --border-strong: #6b635b;
+  --shimmer: rgba(255, 255, 255, 0.06);
+  --backdrop: rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-2: var(--accent-2);
+  --color-accent-3: var(--accent-3);
+  --color-danger: var(--danger);
+  --color-danger-fg: var(--danger-fg);
+  --color-border-strong: var(--border-strong);
+  --color-success: var(--success);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  background: var(--bg);
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  overscroll-behavior-y: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Theme crossfade: the toggle wraps the attribute swap in document.startViewTransition. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 250ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 1ms !important;
+  }
+}
+
+/* === motion === */
+/* Skeleton shimmer: transform-only translate loop, see src/components/motion/Skeleton.tsx. */
+@keyframes skeleton-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, transparent, var(--shimmer), transparent);
+  animation: skeleton-shimmer 1.4s linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer {
+    display: none;
+  }
+  .skeleton {
+    animation: skeleton-pulse 2.4s ease-in-out infinite;
+  }
+}
+/* BreathingCircles: transform and opacity only. Values come from tokens (timing.breathe,
+   scale.breathe, distance.breatheX, opacity.breatheLow, ease.inOut) via inline CSS variables. */
+@keyframes breathe {
+  from {
+    transform: translateX(calc(var(--breathe-x) * -1)) scale(1);
+    opacity: var(--breathe-lo);
+  }
+  to {
+    transform: translateX(var(--breathe-x)) scale(var(--breathe-scale));
+    opacity: 1;
+  }
+}
+.breathing-circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: var(--breathe-lo);
+  animation: breathe var(--breathe-duration) var(--breathe-ease) infinite alternate;
+  will-change: transform, opacity;
+}
+.breathing-circle-b {
+  /* A full cycle ahead of the first circle = counter-phase with alternate. */
+  animation-delay: calc(var(--breathe-duration) * -1);
+}
+.breathing[data-paused="true"] .breathing-circle {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .breathing-circle {
+    animation: none;
+  }
+}
+/* Splash: hidden before first paint on repeat visits (root layout sets data-splash). */
+:root[data-splash="skip"] .splash-overlay {
+  display: none;
+}
+/* Safety nets for no-JS / slow-JS: SSR'd motion content must never stay hidden or covering the page. */
+@keyframes splash-safety {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+.splash-overlay {
+  animation: splash-safety 1ms linear 2.5s forwards;
+}
+@keyframes stagger-safety {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* data-stagger flips to "ready" on hydration, which disarms this. */
+[data-stagger="ssr"] {
+  animation: stagger-safety 1ms linear 2.5s forwards;
+}
+/* === end motion === */
